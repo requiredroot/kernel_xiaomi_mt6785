@@ -8,6 +8,7 @@
 #include <linux/netdevice.h>
 #include <linux/filter.h>
 #include <linux/if_vlan.h>
+#include <linux/set_memory.h>
 #include <linux/bpf.h>
 #include <linux/memory.h>
 #include <linux/sort.h>
