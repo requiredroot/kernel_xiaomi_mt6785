@@ -6,10 +6,10 @@ SECONDS=0
 
 KERNEL_PATH="$PWD"
 OUT_DIR="$KERNEL_PATH/out"
-KSU_OUT_DIR="$KERNEL_PATH/out-ksu"
+APATCH_OUT_DIR="$KERNEL_PATH/out-apatch"
 AK3_DIR="$KERNEL_PATH/Anykernel"
 DEFCONFIG="begonia_user_defconfig"
-KSU_DEFCONFIG="${DEFCONFIG%_defconfig}_ksu_defconfig"
+APATCH_DEFCONFIG="${DEFCONFIG%_defconfig}_apatch_defconfig"
 CLANG_DIR="$KERNEL_PATH/clang"
 CCACHE_DIR="$KERNEL_PATH/.ccache"
 MKDTBOIMG="$KERNEL_PATH/.tools/mkdtboimg.py"
@@ -34,8 +34,6 @@ if command -v ccache &>/dev/null; then
 else
     echo "==> ccache not found, builds will not be cached (sudo pacman -S ccache to enable)"
 fi
-
-git submodule update --init --recursive KernelSU
 
 download_clang() {
     if [[ ! -d "$CLANG_DIR/bin" ]]; then
@@ -170,11 +168,8 @@ build_kernel() {
     _compile_and_package "$OUT_DIR" "$DEFCONFIG" "NoVA"
 }
 
-build_ksu() {
-    _compile_and_package "$KSU_OUT_DIR" "$KSU_DEFCONFIG" "NoVA-KSU"
-
-    # KernelSU-Next's Kbuild touches the normal defconfig too, revert that
-    git checkout -- "arch/arm64/configs/$DEFCONFIG"
+build_apatch() {
+    _compile_and_package "$APATCH_OUT_DIR" "$APATCH_DEFCONFIG" "NoVA-APatch"
 }
 
 case "${1:-}" in
@@ -182,14 +177,14 @@ case "${1:-}" in
         rm -f ./NoVA-[0-9]*.zip
         build_kernel
         ;;
-    -k|--build-ksu)
-        rm -f ./NoVA-KSU-*.zip
-        build_ksu
+    -p|--build-apatch)
+        rm -f ./NoVA-APatch-*.zip
+        build_apatch
         ;;
     -a|--build-all)
-        rm -f ./NoVA-[0-9]*.zip ./NoVA-KSU-*.zip
+        rm -f ./NoVA-[0-9]*.zip ./NoVA-APatch-*.zip
         build_kernel
-        build_ksu
+        build_apatch
         ;;
     -r|--regen)
         regen_defconfig "${2:-}"
@@ -198,10 +193,10 @@ case "${1:-}" in
         echo
         echo "Usage: $0 [option] [defconfig]"
         echo
-        echo "  -b, --build       Build normal kernel"
-        echo "  -k, --build-ksu   Build KernelSU + SUSFS kernel"
-        echo "  -a, --build-all   Build both normal and KernelSU kernels"
-        echo "  -r, --regen       Regenerate defconfig"
+        echo "  -b, --build         Build normal kernel"
+        echo "  -p, --build-apatch  Build APatch-compatible kernel"
+        echo "  -a, --build-all     Build both normal and APatch kernels"
+        echo "  -r, --regen         Regenerate defconfig"
         exit 1
         ;;
 esac
