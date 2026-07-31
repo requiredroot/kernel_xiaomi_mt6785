@@ -36,6 +36,6 @@ jobs:
       with:
         name: nova-build-outputs
         path: |
-          ./NoVA-APatch-*        # (or wherever your script puts the results)
+          ./NoVA-APatch-*.zip        # (or wherever your script puts the results)
           *.log             # or any other files your script generates
         retention-days: 30
