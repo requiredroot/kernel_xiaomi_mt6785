@@ -1,0 +1,32 @@
+name: Nova Build & Test Workflow (with bc)
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y curl git build-essential pkg-config libssl-dev bc
+
+    - name: Install Rust (nightly for Nova)
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: nightly
+        components: rustfmt, clippy
+
+    - name: Setup Rust cache
+      uses: Swatinem/rust-cache@v2
+
+    - name: Build Nova
+      run: |
+        chmod +x nova-build.sh
+        ./nova-build.sh -p
