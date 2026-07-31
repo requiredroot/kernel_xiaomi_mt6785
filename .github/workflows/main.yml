@@ -1,4 +1,4 @@
-name: Nova Build & Test Workflow (with bc)
+name: Nova Build & Test Workflow (with bc + Artifacts)
 
 on:
   push:
@@ -30,3 +30,12 @@ jobs:
       run: |
         chmod +x nova-build.sh
         ./nova-build.sh -p
+
+    - name: Upload build outputs as artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: nova-build-outputs
+        path: |
+          output/           # (or wherever your script puts the results)
+          *.log             # or any other files your script generates
+        retention-days: 30
