@@ -1,0 +1,88 @@
+name: Build NoVA Kernel
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: "Which build to run"
+        type: choice
+        required: false
+        default: normal
+        options:
+          - normal
+          - apatch
+          - both
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build kernel
+    runs-on: ubuntu-latest
+
+    env:
+      BUILD_TYPE: ${{ github.event_name == 'workflow_dispatch' && inputs.build_type || 'normal' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Install prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            bc bison flex \
+            libssl-dev libfl-dev libncurses-dev \
+            zip unzip wget git ccache python3
+
+      - name: Cache AOSP Clang
+        id: cache-clang
+        uses: actions/cache@v4
+        with:
+          path: clang
+          key: aosp-clang-android-14.0.0_r50-r510928
+
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: .ccache
+          key: ccache-${{ runner.os }}-${{ hashFiles('arch/arm64/configs/begonia_user_defconfig', 'arch/arm64/configs/begonia_user_apatch_defconfig') }}
+          restore-keys: |
+            ccache-${{ runner.os }}-
+
+      - name: Build kernel with nova-build.sh
+        run: |
+          chmod +x nova-build.sh
+          case "$BUILD_TYPE" in
+            apatch) ./nova-build.sh -p ;;
+            both)   ./nova-build.sh -a ;;
+            *)      ./nova-build.sh -b ;;
+          esac
+
+      - name: Upload flashable zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: NoVA-flashable-zip
+          path: NoVA-*.zip
+          if-no-files-found: error
+          compression-level: 0
+
+      - name: Upload kernel image and dtb
+        uses: actions/upload-artifact@v4
+        with:
+          name: NoVA-kernel-image
+          path: |
+            out/arch/arm64/boot/Image.gz
+            out/arch/arm64/boot/dts/mediatek/mt6785.dtb
+            out-apatch/arch/arm64/boot/Image.gz
+            out-apatch/arch/arm64/boot/dts/mediatek/mt6785.dtb
+          if-no-files-found: warn
+          compression-level: 0
