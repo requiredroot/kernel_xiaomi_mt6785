@@ -125,7 +125,7 @@ all.config
 kernel/configs/android-*.cfg
 
 out/
-out-ksu/
+out-apatch/
 *.zip
 Anykernel/
 clang*
